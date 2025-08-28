@@ -13,7 +13,7 @@ Copyright: 2002, Colin Walters <walters@debian.org>
            2012, Eshat Cakar <info@eshat.de>
            2012, Paul Tagliamonte <paultag@debian.org>
            2014-2019, Aurélien COUDERC <coucouf@debian.org>
-           2012-2022, Jonathan Carter <jcc@debian.org>
+           2012-2025, Jonathan Carter <jcc@debian.org>
 License: GPL-2+
 
 Files: pixmaps/debian-security.png
@@ -84,6 +84,10 @@ Files: moonlight-theme/plymouth/logo_in_circle.png
 Copyright: 1999, Software in the Public Interest, Inc.
            2018 Juliette Taka <juliette.belin@logilab.fr>
 License: GPL-3+ or CC-BY-SA-3.0
+
+Files: ceratopsian-theme/*
+Copyright: 2024 Elise Couper <couperpc@gmail.com>
+License: GPL-2+
 
 License: CC-BY-SA-3.0
  THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE

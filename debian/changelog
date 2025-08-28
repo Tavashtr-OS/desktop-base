@@ -1,9 +1,66 @@
-desktop-base (12.0.6+nmu1~deb12u1) bookworm; urgency=medium
+desktop-base (13.0.4) trixie; urgency=medium
 
-  * Non-maintainer upload.
-  * Rebuild for bookworm.
+  [ Aurélien COUDERC ]
+  * Fix ceratopsian-theme’s plymouth password/fsck prompts off-center on
+    multi-monitor mixed-resolution set-ups. Thanks Shaun Lewis for the patch.
+    (Closes: #1110858)
 
- -- Andreas Beckmann <anbe@debian.org>  Wed, 12 Jul 2023 11:49:12 +0200
+ -- Aurélien COUDERC <coucouf@debian.org>  Thu, 28 Aug 2025 13:33:06 +0200
+
+desktop-base (13.0.3) unstable; urgency=medium
+
+  * Fix incongruous black background in logo-text.svg and
+    logo-text-version.svg when rendered by the Qt stack.
+  * Move unused files out of the Plymouth emerald theme installed into the
+    initrds. (Closes: #1095314)
+  * Remove unwanted metadata from SVG files. (Closes: #956102)
+  * Add vertical and extra-wide aspect ratio wallpapers. (Closes: #1074356)
+  * Cleanup final ceratopsian SVGs from design work elements, saving ~25% on
+    their file sizes.
+  * Fix that the Debian Plasma theme cannot be selected in Plasma settings,
+    update theme for Plasma 6 and trixie.
+  * Fix incorrect license ref in debian/copyright.
+
+ -- Aurélien COUDERC <coucouf@debian.org>  Fri, 30 May 2025 14:30:31 +0200
+
+desktop-base (13.0.2) unstable; urgency=medium
+
+  * Use new version of logo-text.svg that renders in rsvg
+
+ -- Jonathan Carter <jcc@debian.org>  Sat, 10 May 2025 12:23:40 +0200
+
+desktop-base (13.0.1) unstable; urgency=medium
+
+  * Initial integration of ceratopsian-theme
+    - Update copyright years
+    - Start work in ceratopsian-theme directory
+    - Update plymouth background
+    - Update GNOME metadata
+    - Update alternatives in postinst
+    - Update Makefile with new entries
+  * Update standards version to 4.7.2
+  * Remove version from logo
+
+ -- Jonathan Carter <jcc@debian.org>  Tue, 06 May 2025 16:03:29 +0200
+
+desktop-base (13.0.0~pre1) unstable; urgency=medium
+
+  [ Simon McVittie ]
+  * Emerald: Remove Debian major version number from backgrounds.
+    We have been in the Debian 13 cycle for more than a year now, so it seems
+    inappropriate to identify testing/unstable installations as Debian 12.
+    (Helps: #1038660)
+  * Homeworld: Remove major version number from grub background.
+    This seems to have been missed during #989822.
+
+  [ Aurélien COUDERC ]
+  * Drop obsolete lintian overrides.
+  * Bump Standards-Version to 4.7.0, no change required.
+  * Switch from debian/compat to debhelper-compat build dependency.
+  * Drop custom gitlab-ci.yml config file and switch to default salsa-ci
+    pipeline.
+
+ -- Aurélien COUDERC <coucouf@debian.org>  Tue, 03 Sep 2024 09:02:06 +0200
 
 desktop-base (12.0.6+nmu1) unstable; urgency=medium
 

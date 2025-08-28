@@ -21,7 +21,6 @@
    xml:space="preserve"
    sodipodi:docname="plymouth_background.svg"
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
-   inkscape:export-filename="C:\Users\xine\Documents\2018-debian-buster\futurePrototype-source\boot-screen\plymouth\plymouth_background_future.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96"><metadata
      id="metadata138"><rdf:RDF><cc:Work
@@ -101,7 +100,6 @@
      transform="matrix(3.7795276,0,0,3.7795276,-2.4689297e-4,77.480341)"
      style="display:inline"
      id="g854"><rect
-       inkscape:export-filename="C:\Users\xine\Documents\2018-debian-buster\futurePrototype-source\desktop-wallpaper\png\wallpaper-4096x2160.png"
        style="display:inline;opacity:1;fill:url(#linearGradient875);fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:6.98096466;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal;enable-background:new"
        id="rect1009"
        width="602.07404"
@@ -115,7 +113,6 @@
        transform="matrix(0.55555555,0,0,0.55555555,-47.03703,131.99999)"
        inkscape:export-ydpi="96"
        inkscape:export-xdpi="96"
-       inkscape:export-filename="C:\Users\xine\Documents\2018-debian-buster\futurePrototype-source\desktop-wallpaper\png\wallpaper-4096x2160.png"
        id="g850"><path
          style="display:inline;opacity:0.05;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:47.49254608;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal;enable-background:new"
          d="m 4096,213.4043 c -181.398,49.84648 -356.9629,122.70831 -521.1699,217.33398 -280.0429,161.37687 -528.7374,387.17968 -702.1231,667.63472 -173.3857,280.4551 -268.7325,616.7129 -247.5468,949.6875 2.3768,37.3559 6.2014,74.6656 10.748,111.9395 H 4096 Z"

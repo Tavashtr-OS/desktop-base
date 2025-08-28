@@ -8,7 +8,3 @@ desktop-base binary: package-contains-empty-directory [usr/share/icons/vendor/sc
 # We do want the debian in circle logo to be copied for newly created users
 desktop-base: package-contains-file-in-etc-skel [etc/skel/.face.icon]
 desktop-base: package-contains-file-in-etc-skel [etc/skel/.face]
-
-# to make lintian/ftp-master happy :-/
-desktop-base: package-contains-file-in-etc-skel etc/skel/.face.icon
-desktop-base: package-contains-file-in-etc-skel etc/skel/.face
