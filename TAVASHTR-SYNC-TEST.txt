@@ -1,0 +1,2 @@
+This file is a temporary Tavashtr downstream patch used to test
+automatic Debian package synchronization.
