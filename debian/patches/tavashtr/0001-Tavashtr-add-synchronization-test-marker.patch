@@ -1,0 +1,17 @@
+From: Himanshu-kumar-gupta <himanshukumargupta135@gmail.com>
+Date: Thu, 8 Oct 2026 21:27:11 +0530
+Subject: Tavashtr: add synchronization test marker
+
+---
+ TAVASHTR-SYNC-TEST.txt | 2 ++
+ 1 file changed, 2 insertions(+)
+ create mode 100644 TAVASHTR-SYNC-TEST.txt
+
+diff --git a/TAVASHTR-SYNC-TEST.txt b/TAVASHTR-SYNC-TEST.txt
+new file mode 100644
+index 0000000..c8eb83c
+--- /dev/null
++++ b/TAVASHTR-SYNC-TEST.txt
+@@ -0,0 +1,2 @@
++This file is a temporary Tavashtr downstream patch used to test
++automatic Debian package synchronization.
