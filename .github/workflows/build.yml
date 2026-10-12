@@ -80,8 +80,8 @@ jobs:
           $chroot_mode = 'unshare';
           $run_lintian = 0;
           EOF
-	
-	  # Generate the baseline Trixie build environment tarball
+          
+          # Generate the baseline Trixie build environment tarball
           mkdir -p "$HOME/.cache/sbuild"
           mmdebstrap --variant=buildd trixie --skip=output/dev "$HOME/.cache/sbuild/trixie-amd64.tar.xz"
 
