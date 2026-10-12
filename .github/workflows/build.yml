@@ -1,0 +1,126 @@
+name: Build desktop-base
+
+on:
+  push:
+    branches:
+      - tavashtr
+
+  pull_request:
+    branches:
+      - tavashtr
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Debian package
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            git-buildpackage \
+            devscripts \
+            sbuild \
+            mmdebstrap \
+            uidmap \
+            debian-archive-keyring \
+            quilt \
+            lintian \
+            ca-certificates
+
+      - name: Prepare local Git branch
+        run: |
+          git switch -C tavashtr "$GITHUB_SHA"
+
+          git config user.name "Tavashtr CI"
+          git config user.email "ci@tavashtr.com"
+
+      - name: Check package metadata
+        run: |
+          echo "Source package:"
+          dpkg-parsechangelog -S Source
+
+          echo "Current package version:"
+          dpkg-parsechangelog -S Version
+
+          echo "Source format:"
+          cat debian/source/format
+
+          test "$(dpkg-parsechangelog -S Source)" = "desktop-base"
+
+          test -s debian/patches/series
+
+          echo "Patch series:"
+          cat debian/patches/series
+
+      - name: Configure sbuild
+        run: |
+          mkdir -p "$HOME/.config/sbuild"
+
+          cat > "$HOME/.config/sbuild/config.pl" <<'EOF'
+          $chroot_mode = 'unshare';
+          $run_lintian = 0;
+          EOF
+
+      - name: Apply Tavashtr patch queue
+        run: |
+          gbp pq import
+
+          echo "Branch after importing patches:"
+          git branch --show-current
+
+          echo "Patch-applied source state:"
+          git status --short
+
+      - name: Build package in Debian Trixie
+        run: |
+          PATCH_BRANCH="$(git branch --show-current)"
+
+          echo "Building applied patch queue: $PATCH_BRANCH"
+
+          gbp buildpackage \
+            --git-debian-branch="$PATCH_BRANCH" \
+            --git-no-pristine-tar \
+            --git-builder="sbuild --chroot-mode=unshare --dist=trixie --arch-all --no-run-lintian"
+
+      - name: Collect build artifacts
+        if: always()
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+
+          find "$(dirname "$GITHUB_WORKSPACE")" \
+            -maxdepth 4 \
+            -type f \
+            \( \
+              -name '*.deb' -o \
+              -name '*.changes' -o \
+              -name '*.buildinfo' -o \
+              -name '*.dsc' \
+            \) \
+            -not -path '*/.git/*' \
+            -exec cp -f {} "$GITHUB_WORKSPACE/artifacts/" \;
+
+          ls -lh "$GITHUB_WORKSPACE/artifacts"
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-base-build
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 7
