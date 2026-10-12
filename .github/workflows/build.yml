@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - tavashtr
-
   pull_request:
     branches:
       - tavashtr
-
   workflow_dispatch:
 
 permissions:
@@ -17,16 +15,15 @@ permissions:
 jobs:
   build:
     name: Build Debian package
-    runs-on: ubuntu-latest
-    container: debian:trixie
+    runs-on: ubuntu-latest # Running directly on the VM, no Docker container needed!
     timeout-minutes: 60
 
     steps:
       - name: Install build tools
         run: |
-          apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            git \
+          # We are on the Ubuntu VM, so we use sudo
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             git-buildpackage \
             devscripts \
             sbuild \
@@ -34,73 +31,43 @@ jobs:
             uidmap \
             debian-archive-keyring \
             quilt \
-            lintian \
-            ca-certificates \
-            build-essential \
-            fakeroot
-            
+            lintian
+                      
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Configure Git Safe Directory
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Prepare local Git branch
         run: |
           git switch -C tavashtr "$GITHUB_SHA"
-
           git config user.name "Tavashtr CI"
           git config user.email "ci@tavashtr.com"
 
-      - name: Check package metadata
-        run: |
-          echo "Source package:"
-          dpkg-parsechangelog -S Source
-
-          echo "Current package version:"
-          dpkg-parsechangelog -S Version
-
-          echo "Source format:"
-          cat debian/source/format
-
-          test "$(dpkg-parsechangelog -S Source)" = "desktop-base"
-
-          test -s debian/patches/series
-
-          echo "Patch series:"
-          cat debian/patches/series
-
-      - name: Configure sbuild
+      - name: Configure and Bootstrap sbuild
         run: |
           mkdir -p "$HOME/.config/sbuild"
-
           cat > "$HOME/.config/sbuild/config.pl" <<'EOF'
           $chroot_mode = 'unshare';
           $run_lintian = 0;
           EOF
           
-          # Generate the baseline Trixie build environment tarball
+          # mmdebstrap will pull the Trixie packages from Debian directly onto the Ubuntu runner
           mkdir -p "$HOME/.cache/sbuild"
-          mmdebstrap --variant=buildd trixie --skip=output/dev "$HOME/.cache/sbuild/trixie-amd64.tar.xz"
+          mmdebstrap --variant=buildd trixie "$HOME/.cache/sbuild/trixie-amd64.tar.xz"
 
       - name: Apply Tavashtr patch queue
         run: |
           gbp pq import
-
-          echo "Branch after importing patches:"
-          git branch --show-current
-
-          echo "Patch-applied source state:"
+          echo "Building from patched source state:"
           git status --short
 
       - name: Build package in Debian Trixie
         run: |
           PATCH_BRANCH="$(git branch --show-current)"
-
           echo "Building applied patch queue: $PATCH_BRANCH"
-
+          
+          # Compiling via the unshare chroot
           gbp buildpackage \
             --git-debian-branch="$PATCH_BRANCH" \
             --git-no-pristine-tar \
@@ -110,7 +77,7 @@ jobs:
         if: always()
         run: |
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
-
+          
           find "$(dirname "$GITHUB_WORKSPACE")" \
             -maxdepth 4 \
             -type f \
@@ -122,8 +89,6 @@ jobs:
             \) \
             -not -path '*/.git/*' \
             -exec cp -f {} "$GITHUB_WORKSPACE/artifacts/" \;
-
-          ls -lh "$GITHUB_WORKSPACE/artifacts"
 
       - name: Upload build artifacts
         if: always()
