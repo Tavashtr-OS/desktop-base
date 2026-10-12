@@ -29,9 +29,9 @@ jobs:
 
       - name: Install build tools
         run: |
-          sudo apt-get update
-
-          sudo apt-get install -y \
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git \
             git-buildpackage \
             devscripts \
             sbuild \
@@ -40,7 +40,9 @@ jobs:
             debian-archive-keyring \
             quilt \
             lintian \
-            ca-certificates
+            ca-certificates \
+            build-essential \
+            fakeroot
 
       - name: Prepare local Git branch
         run: |
