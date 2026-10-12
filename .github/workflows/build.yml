@@ -46,12 +46,6 @@ jobs:
 
       - name: Configure and Bootstrap sbuild
         run: |
-          mkdir -p "$HOME/.config/sbuild"
-          cat > "$HOME/.config/sbuild/config.pl" <<'EOF'
-          $chroot_mode = 'unshare';
-          $run_lintian = 0;
-          EOF
-          
           # mmdebstrap will pull the Trixie packages from Debian directly onto the Ubuntu runner
           mkdir -p "$HOME/.cache/sbuild"
           mmdebstrap --variant=buildd trixie "$HOME/.cache/sbuild/trixie-amd64.tar.xz"
