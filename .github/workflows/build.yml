@@ -100,7 +100,7 @@ jobs:
           gbp buildpackage \
             --git-debian-branch="$PATCH_BRANCH" \
             --git-no-pristine-tar \
-            --git-builder="sbuild --chroot-mode=unshare --dist=trixie --arch-all --no-run-lintian"
+            --git-builder="sbuild --chroot-mode=unshare --dist=trixie --arch-all --no-run-lintian --no-clean-source"
 
       - name: Collect build artifacts
         if: always()
