@@ -22,11 +22,6 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Install build tools
         run: |
           apt-get update
@@ -43,6 +38,11 @@ jobs:
             ca-certificates \
             build-essential \
             fakeroot
+            
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Prepare local Git branch
         run: |
