@@ -19,7 +19,7 @@ jobs:
       - name: Install Debian source tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y devscripts
+          sudo apt-get install -y devscripts debian-keyring
 
       - name: Resolve latest Debian Trixie source
         id: source
