@@ -1,7 +1,9 @@
-name: Trixie Sync Build Test
+name: Latest Trixie Sync
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '30 2 * * *' # Runs at 2:30 AM UTC (8:00 AM IST) every day
 
 permissions:
   contents: write
