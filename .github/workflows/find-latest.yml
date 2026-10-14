@@ -1,0 +1,79 @@
+name: Trixie Sync Build Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync-and-build:
+    runs-on: ubuntu-24.04
+
+    env:
+      PACKAGE: desktop-base
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve latest Debian Trixie source
+        id: source
+        run: |
+          BEST_VER=""
+          BEST_URL=""
+          BEST_SUITE=""
+
+          for SUITE in trixie trixie-updates trixie-security; do
+              if [ "$SUITE" = "trixie-security" ]; then
+                  ROOT="https://deb.debian.org/debian-security"
+              else
+                  ROOT="https://deb.debian.org/debian"
+              fi
+              INDEX="${ROOT}/dists/${SUITE}/main/source/Sources.xz"
+
+              echo "Scanning $SUITE..."
+
+              DATA=$(curl -sSL --max-time 15 "$INDEX" | xzcat | awk -v pkg="$PACKAGE" '
+                  $1 == "Package:" { in_pkg = ($2 == pkg) }
+                  in_pkg && $1 == "Version:" { ver = $2 }
+                  in_pkg && $1 == "Directory:" { dir = $2 }
+                  in_pkg && $3 ~ /\.dsc$/ { dsc = $3 }
+                  /^$/ && in_pkg { print ver, dir, dsc; found=1; exit }
+                  END { if (!found && in_pkg && ver && dir && dsc) print ver, dir, dsc }
+              ')
+
+              if [ -n "$DATA" ]; then
+                  VER=$(echo "$DATA" | awk '{print $1}')
+                  DIR=$(echo "$DATA" | awk '{print $2}')
+                  DSC=$(echo "$DATA" | awk '{print $3}')
+                  FULL_URL="${ROOT}/${DIR}/${DSC}"
+
+                  if [ -z "$BEST_VER" ] || dpkg --compare-versions "$VER" gt "$BEST_VER"; then
+                      BEST_VER="$VER"
+                      BEST_URL="$FULL_URL"
+                      BEST_SUITE="$SUITE"
+                  fi
+              fi
+          done
+
+          if [ -z "$BEST_VER" ]; then
+              echo "Error: $PACKAGE not found in Trixie indexes."
+              exit 1
+          fi
+
+          echo "Selected version: $BEST_VER"
+          echo "Selected suite: $BEST_SUITE"
+          echo "DSC URL: $BEST_URL"
+
+          echo "version=$BEST_VER" >> "$GITHUB_OUTPUT"
+          echo "suite=$BEST_SUITE" >> "$GITHUB_OUTPUT"
+          echo "dsc_url=$BEST_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download exact Debian source with dget
+        run: |
+          mkdir -p source
+          cd source
+
+          dget -d "${{ steps.source.outputs.dsc_url }}"
+
+          ls -lh
