@@ -3,9 +3,12 @@ name: Trixie Sync Build Test
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   sync-and-build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     env:
       PACKAGE: desktop-base
@@ -19,7 +22,11 @@ jobs:
       - name: Install Debian source tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y devscripts debian-keyring
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+                      devscripts \
+                      debian-keyring \
+                      git-buildpackage \
+                      pristine-tar
 
       - name: Resolve latest Debian Trixie source
         id: source
@@ -38,7 +45,30 @@ jobs:
 
               echo "Scanning $SUITE..."
 
-              DATA=$(curl -sSL --max-time 15 "$INDEX" | xzcat | awk -v pkg="$PACKAGE" '
+              # Download to disk to explicitly capture HTTP codes and network crashes
+              INDEX_FILE="Sources.xz"
+              if ! HTTP_CODE="$(curl \
+                  --silent --show-error --location \
+                  --connect-timeout 20 \
+                  --max-time 120 \
+                  --retry 3 \
+                  --output "$INDEX_FILE" \
+                  --write-out '%{http_code}' \
+                  "$INDEX")"; then
+                echo "::error::Network error downloading $SUITE."
+                exit 1
+              fi
+
+              if [[ "$HTTP_CODE" == "404" ]]; then
+                echo "Index for $SUITE not found. Skipping."
+                continue
+              elif [[ "$HTTP_CODE" != "200" ]]; then
+                echo "::error::Unexpected HTTP status $HTTP_CODE for $SUITE."
+                exit 1
+              fi
+
+              # Parse from local disk. AWK can now safely use early 'exit' with zero pipe errors!
+              DATA=$(xzcat "$INDEX_FILE" | awk -v pkg="$PACKAGE" '
                   $1 == "Package:" { in_pkg = ($2 == pkg) }
                   in_pkg && $1 == "Version:" { ver = $2 }
                   in_pkg && $1 == "Directory:" { dir = $2 }
@@ -74,7 +104,34 @@ jobs:
           echo "suite=$BEST_SUITE" >> "$GITHUB_OUTPUT"
           echo "dsc_url=$BEST_URL" >> "$GITHUB_OUTPUT"
 
+      - name: Check whether Debian source is newer
+        id: version_check
+        env:
+          NEW_VERSION: ${{ steps.source.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin --tags \
+            +refs/heads/debian-trixie:refs/remotes/origin/debian-trixie
+
+          # Force local branch to match remote
+          git switch -C debian-trixie origin/debian-trixie
+
+          CURRENT_VERSION=$(dpkg-parsechangelog -S Version)
+
+          echo "Existing changelog version: $CURRENT_VERSION"
+          echo "New Debian source version: $NEW_VERSION"
+
+          if dpkg --compare-versions "$NEW_VERSION" gt "$CURRENT_VERSION"; then
+            echo "update=true" >> "$GITHUB_OUTPUT"
+            echo "A newer Debian source version is available."
+          else
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            echo "No newer Debian source version. Skipping import."
+          fi
+
       - name: Download exact Debian source with dget
+        if: steps.version_check.outputs.update == 'true'
         run: |
           mkdir -p source
           cd source
@@ -82,3 +139,23 @@ jobs:
           dget -d "${{ steps.source.outputs.dsc_url }}"
 
           ls -lh
+
+      - name: Check and Update Debian base
+        if: steps.version_check.outputs.update == 'true'
+        run: |
+          # Configure Git for the import commits
+          git config user.name "Tavashtr Sync Bot"
+          git config user.email "githubci@tavashtr.com"
+          git switch debian-trixie
+
+          gbp import-dsc \
+            --debian-branch=debian-trixie \
+            --pristine-tar \
+            source/*.dsc
+
+          echo "Updated local branch:"
+          git log -1 --oneline
+          git status --short --branch
+
+          # Push the new commits AND the new version tags back to GitHub
+          git push origin debian-trixie --tags
