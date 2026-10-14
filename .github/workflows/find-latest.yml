@@ -46,7 +46,7 @@ jobs:
               echo "Scanning $SUITE..."
 
               # Download to disk to explicitly capture HTTP codes and network crashes
-              INDEX_FILE="Sources.xz"
+              INDEX_FILE="$RUNNER_TEMP/Sources.xz"
               if ! HTTP_CODE="$(curl \
                   --silent --show-error --location \
                   --connect-timeout 20 \
@@ -133,8 +133,8 @@ jobs:
       - name: Download exact Debian source with dget
         if: steps.version_check.outputs.update == 'true'
         run: |
-          mkdir -p source
-          cd source
+          mkdir -p ../debian-source
+          cd ../debian-source
 
           dget -d "${{ steps.source.outputs.dsc_url }}"
 
@@ -151,7 +151,7 @@ jobs:
           gbp import-dsc \
             --debian-branch=debian-trixie \
             --pristine-tar \
-            source/*.dsc
+            ../debian-source/*.dsc
 
           echo "Updated local branch:"
           git log -1 --oneline
