@@ -6,7 +6,7 @@ on:
     - cron: '30 2 * * *' # Runs at 2:30 AM UTC (8:00 AM IST) every day
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   sync-and-build:
@@ -16,10 +16,19 @@ jobs:
       PACKAGE: desktop-base
 
     steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Install Debian source tools
         run: |

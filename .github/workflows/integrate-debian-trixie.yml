@@ -1,0 +1,121 @@
+name: Integrate Debian Trixie
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - debian-trixie
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integrate-debian-trixie
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    if: github.ref == 'refs/heads/tavashtr' || github.ref == 'refs/heads/debian-trixie'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Check out Tavashtr integration code
+        uses: actions/checkout@v7
+        with:
+          ref: tavashtr
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Install Debian tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends devscripts
+
+      - name: Prepare integration branch
+        id: prepare
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          git fetch origin tavashtr debian-trixie
+
+          mkdir -p "$RUNNER_TEMP/changelogs"
+          git show origin/tavashtr:debian/changelog \
+            > "$RUNNER_TEMP/changelogs/tavashtr"
+          git show origin/debian-trixie:debian/changelog \
+            > "$RUNNER_TEMP/changelogs/debian-trixie"
+
+          upstream_version="$(
+            dpkg-parsechangelog \
+              --file "$RUNNER_TEMP/changelogs/debian-trixie" \
+              --show-field Version
+          )"
+          branch="integration/debian-trixie-${upstream_version}"
+
+          existing_pr="$(
+            gh pr list \
+              --state open \
+              --base tavashtr \
+              --head "$branch" \
+              --json url \
+              --jq '.[0].url // empty'
+          )"
+          if [[ -n "$existing_pr" ]]; then
+            echo "An integration PR already exists: $existing_pr"
+            exit 0
+          fi
+
+          git switch --create "$branch" origin/tavashtr
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Merge Debian source and resolve changelog
+        if: steps.prepare.outputs.branch != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Tavashtr Integration Bot"
+          git config user.email "githubci@tavashtr.com"
+
+          if ! git merge --no-ff --no-commit origin/debian-trixie; then
+            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
+            if [[ "${conflicts[*]}" != "debian/changelog" ]]; then
+              printf '::error::Manual resolution required for conflicts: %s\n' \
+                "${conflicts[*]}"
+              exit 1
+            fi
+          fi
+
+          ./scripts/resolve-tavashtr-changelog.sh \
+            "$RUNNER_TEMP/changelogs/tavashtr" \
+            "$RUNNER_TEMP/changelogs/debian-trixie" \
+            debian/changelog
+
+          git add debian/changelog
+          git commit --no-edit
+
+      - name: Push integration branch and open PR
+        if: steps.prepare.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          INTEGRATION_BRANCH: ${{ steps.prepare.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git push origin "$INTEGRATION_BRANCH"
+          gh pr create \
+            --base tavashtr \
+            --head "$INTEGRATION_BRANCH" \
+            --title "Integrate Debian Trixie into Tavashtr" \
+            --body "Integrates debian-trixie into tavashtr. The Debian package build must pass before merging."
