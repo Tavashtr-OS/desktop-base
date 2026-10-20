@@ -1,4 +1,5 @@
-GRUB_THEMES=emerald-theme/grub\
+GRUB_THEMES=ceratopsian-theme/grub\
+	emerald-theme/grub\
 	homeworld-theme/grub\
 	futureprototype-theme/grub\
 	moonlight-theme/grub\
@@ -38,6 +39,12 @@ build-logos clean-logos install-logos:
 install: install-grub install-emblems install-logos install-local
 
 install-local:
+	# Ensure SVG files don’t include inkscape:export-filename. (See #956102)
+	if find . -name "*.svg" -exec grep inkscape:export-filename {} + ; then \
+		echo "error: please remove inkscape:export-filename attribute from SVGs, it tends to leak information about the user who did the export."; \
+		exit 1; \
+	fi
+
 	# debian logo in circle as default user face icon
 	install -d $(DESTDIR)/etc/skel
 	$(INSTALL_DATA) defaults/common/etc/skel/.face $(DESTDIR)/etc/skel
@@ -52,6 +59,7 @@ install-local:
 	# pixmaps files
 	mkdir -p $(DESTDIR)/usr/share/pixmaps
 	$(INSTALL_DATA) $(PIXMAPS) $(DESTDIR)/usr/share/pixmaps/
+
 
 	# Create a 'debian-theme' symlink in plymouth themes folder, pointing at the
 	# plymouth theme for the currently active 'desktop-theme' alternative.
@@ -289,7 +297,6 @@ install-local:
 	install -d $(DESTDIR)/usr/share/desktop-base/emerald-theme
 	cd $(DESTDIR)/usr/share/desktop-base/emerald-theme && ln -s /usr/share/plymouth/themes/emerald plymouth
 
-
 	### Wallpapers
 	install -d $(DESTDIR)/usr/share/desktop-base/emerald-theme/wallpaper/contents/images
 	$(INSTALL_DATA) emerald-theme/wallpaper/metadata.json $(DESTDIR)/usr/share/desktop-base/emerald-theme/wallpaper
@@ -314,6 +321,37 @@ install-local:
 	install -d $(DESTDIR)/usr/share/wallpapers
 	cd $(DESTDIR)/usr/share/wallpapers && ln -s /usr/share/desktop-base/emerald-theme/wallpaper emerald_wallpaper
 
+	# ceratopsian theme (Trixie’s default)
+	### Plymouth theme
+	install -d $(DESTDIR)/usr/share/plymouth/themes/ceratopsian
+	$(INSTALL_DATA) $(wildcard ceratopsian-theme/plymouth/*) $(DESTDIR)/usr/share/plymouth/themes/ceratopsian
+	install -d $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme
+	cd $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme && ln -s /usr/share/plymouth/themes/ceratopsian plymouth
+
+	### Wallpapers
+	install -d $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/wallpaper/contents/images
+	$(INSTALL_DATA) ceratopsian-theme/wallpaper/metadata.json $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/wallpaper
+	$(INSTALL_DATA) ceratopsian-theme/wallpaper/gnome-background.xml $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/wallpaper
+	$(INSTALL_DATA) $(wildcard ceratopsian-theme/wallpaper/contents/images/*) $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/wallpaper/contents/images/
+	$(INSTALL_DATA) ceratopsian-theme/gnome-wp-list.xml $(DESTDIR)/usr/share/gnome-background-properties/debian-ceratopsian.xml
+	# Wallpaper symlink for KDE
+	install -d $(DESTDIR)/usr/share/wallpapers
+	cd $(DESTDIR)/usr/share/wallpapers && ln -s /usr/share/desktop-base/ceratopsian-theme/wallpaper ceratopsian
+
+	### Login background
+	install -d $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/login
+	$(INSTALL_DATA) $(wildcard ceratopsian-theme/login/*) $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/login
+
+	### Lockscreen is using the same image as wallpaper
+	install -d $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/lockscreen/contents/images
+	$(INSTALL_DATA) ceratopsian-theme/wallpaper/metadata.json $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/lockscreen
+	$(INSTALL_DATA) ceratopsian-theme/wallpaper/gnome-background.xml $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/lockscreen
+	$(INSTALL_DATA) $(wildcard ceratopsian-theme/wallpaper/contents/images/*) $(DESTDIR)/usr/share/desktop-base/ceratopsian-theme/lockscreen/contents/images/
+
+	# Lock screen symlink for KDE
+	install -d $(DESTDIR)/usr/share/wallpapers
+	cd $(DESTDIR)/usr/share/wallpapers && ln -s /usr/share/desktop-base/ceratopsian-theme/wallpaper ceratopsian_wallpaper
+	# End ceratopsian theme
 
 	# Moonlight theme
 	### Plymouth theme
