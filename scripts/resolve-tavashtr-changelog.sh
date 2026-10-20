@@ -51,6 +51,19 @@ first_entry_body() {
   ' "$1"
 }
 
+# Print the changelog after its first entry's signature.
+entries_after_first() {
+  awk '
+    /^ -- / && !first_signature_seen {
+      first_signature_seen = 1
+      next
+    }
+    first_signature_seen {
+      print
+    }
+  ' "$1"
+}
+
 package=$(get_field "$debian_changelog" Source)
 tavashtr_package=$(get_field "$tavashtr_changelog" Source)
 [ "$package" = "$tavashtr_package" ] ||
@@ -115,7 +128,12 @@ output_tmp=$(mktemp "$output_dir/.$(basename "$output_path").XXXXXX")
   printf '\n'
 
   printf '\n -- %s  %s\n\n' "$maintainer" "$(date -R)"
-  cat "$tavashtr_changelog"
+  
+  if [ "$tavashtr_distribution" = "UNRELEASED" ]; then
+    entries_after_first "$tavashtr_changelog"
+  else
+    cat "$tavashtr_changelog"
+  fi
 } > "$output_tmp"
 
 parsed_version=$(get_field "$output_tmp" Version)

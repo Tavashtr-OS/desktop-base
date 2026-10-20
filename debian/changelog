@@ -1,3 +1,11 @@
+desktop-base (12.0.6+nmu1~deb12u1+tavashtr3) UNRELEASED; urgency=medium
+
+  * Added additional workflow for automation
+  * Added script for resolving Debian changelog
+  * GitHub automation now also uses GitHub App Token
+
+ -- Himanshu Kumar Gupta <himanshukumargupta@tavashtr.com>  Tue, 20 Oct 2026 09:40:41 +0530
+
 desktop-base (12.0.6+nmu1~deb12u1+tavashtr2) tavashtr; urgency=medium
 
   * Add synchronization test marker patch.
