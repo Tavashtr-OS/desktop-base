@@ -18,7 +18,6 @@
    xml:space="preserve"
    inkscape:version="0.91 r13725"
    sodipodi:docname="grub-16x9.svg"
-   inkscape:export-filename="/tmp/grub.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90"><metadata
      id="metadata3111"><rdf:RDF><cc:Work
@@ -80,12 +79,10 @@
      style="fill:url(#background_1_);fill-rule:evenodd"
      x="0"
      y="0"
-     inkscape:export-filename="/tmp/lines-grub-1920x1080.png"
      inkscape:export-xdpi="200.97"
      inkscape:export-ydpi="200.97" /><g
      id="swirl"
      transform="translate(196,0)"
-     inkscape:export-filename="/tmp/lines-grub-1920x1080.png"
      inkscape:export-xdpi="200.97"
      inkscape:export-ydpi="200.97"><radialGradient
        id="SVGID_1_"
