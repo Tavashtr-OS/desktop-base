@@ -63,7 +63,7 @@ jobs:
           git status --short
 
       - name: Validate Debian autopkgtest metadata
-        run: autopkgtest --validate
+        run: autopkgtest --validate . -- null
 
       - name: Build package in Debian Trixie
         run: |
