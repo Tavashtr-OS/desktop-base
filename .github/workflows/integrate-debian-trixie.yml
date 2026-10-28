@@ -1,10 +1,7 @@
-name: Integrate Debian Trixie
+name: Integrate Debian Trixie with tavashtr branch
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - debian-trixie
 
 permissions:
   contents: read
@@ -98,7 +95,7 @@ jobs:
             fi
           fi
 
-          ./scripts/resolve-tavashtr-changelog.sh \
+          ./.github/scripts/resolve-tavashtr-changelog.sh \
             "$RUNNER_TEMP/changelogs/tavashtr" \
             "$RUNNER_TEMP/changelogs/debian-trixie" \
             debian/changelog

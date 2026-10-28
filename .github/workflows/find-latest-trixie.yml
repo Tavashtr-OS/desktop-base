@@ -1,9 +1,10 @@
-name: Latest Trixie Sync
+name: Latest Trixie Find and Sync
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '30 2 * * *' # Runs at 2:30 AM UTC (8:00 AM IST) every day
+    - cron: '0 4 * * *'
+      timezone: 'Asia/Kolkata'
 
 permissions:
   contents: read
@@ -22,6 +23,7 @@ jobs:
         with:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-actions: write
           permission-contents: write
 
       - name: Checkout repository
@@ -152,6 +154,7 @@ jobs:
           ls -lh
 
       - name: Check and Update Debian base
+        id: update_debian
         if: steps.version_check.outputs.update == 'true'
         run: |
           # Configure Git for the import commits
@@ -170,3 +173,9 @@ jobs:
 
           # Push the new commits AND the new version tags back to GitHub
           git push origin debian-trixie --tags
+
+      - name: Dispatch Debian Trixie integration
+        if: steps.update_debian.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: gh workflow run integrate-debian-trixie.yml --ref tavashtr
