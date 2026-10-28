@@ -1,0 +1,158 @@
+name: Test and Build deb package
+
+on:
+  pull_request:
+    branches:
+      - tavashtr
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.event_name != 'pull_request' || github.event.action != 'closed' || github.event.pull_request.merged == true
+    name: Build Debian package
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Install build tools
+        run: |
+          # We are on the Ubuntu VM, so we use sudo
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git-buildpackage \
+            devscripts \
+            sbuild \
+            mmdebstrap \
+            uidmap \
+            debian-archive-keyring \
+            quilt \
+            lintian \
+            autopkgtest
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Prepare local Git branch
+        run: |
+          git switch -C tavashtr "$GITHUB_SHA"
+          git config user.name "Tavashtr CI"
+          git config user.email "ci@tavashtr.com"
+
+      - name: Configure and Bootstrap sbuild
+        run: |
+          # mmdebstrap will pull the Trixie packages from Debian directly onto the Ubuntu runner
+          mkdir -p "$HOME/.cache/sbuild"
+          mmdebstrap --variant=buildd trixie "$HOME/.cache/sbuild/trixie-amd64.tar.xz"
+
+      - name: Apply Tavashtr patch queue
+        run: |
+          gbp pq import
+          git diff --check "$GITHUB_SHA"...HEAD
+          test "$(dpkg-parsechangelog --show-field Source)" = desktop-base
+          echo "Building from patched source state:"
+          git status --short
+
+      - name: Validate Debian autopkgtest metadata
+        run: autopkgtest --validate .
+
+      - name: Build package in Debian Trixie
+        run: |
+          PATCH_BRANCH="$(git branch --show-current)"
+          echo "Building applied patch queue: $PATCH_BRANCH"
+
+          # Compiling via the unshare chroot
+          gbp buildpackage \
+            --git-debian-branch="$PATCH_BRANCH" \
+            --git-no-pristine-tar \
+            --git-builder="sbuild --chroot-mode=unshare --chroot=$HOME/.cache/sbuild/trixie-amd64.tar.xz --dist=trixie --arch-all --no-run-lintian --no-clean-source"
+
+      - name: Collect build artifacts
+        if: always()
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
+
+          find "$(dirname "$GITHUB_WORKSPACE")" \
+            -maxdepth 4 \
+            -type f \
+            \( \
+              -name '*.deb' -o \
+              -name '*.changes' -o \
+              -name '*.buildinfo' -o \
+              -name '*.dsc' \
+            \) \
+            -not -path '*/.git/*' \
+            -not -path "$GITHUB_WORKSPACE/artifacts/*" \
+            -exec cp -f {} "$GITHUB_WORKSPACE/artifacts/" \;
+
+      - name: Run Lintian
+        run: |
+          shopt -s nullglob
+          CHANGES_FILES=("$GITHUB_WORKSPACE"/artifacts/desktop-base_*.changes)
+          if (( ${#CHANGES_FILES[@]} != 1 )); then
+            printf 'Expected one desktop-base .changes file; found %s.\n' "${#CHANGES_FILES[@]}" >&2
+            exit 1
+          fi
+          lintian --fail-on error --display-info "${CHANGES_FILES[0]}" 2>&1 | tee "$RUNNER_TEMP/lintian-report.log"
+
+      - name: Start Docker service
+        run: |
+          sudo systemctl start docker
+          sudo docker info >/dev/null
+
+      - name: Run package autopkgtests in Debian Trixie
+        run: |
+          shopt -s nullglob
+          DEB_FILES=("$GITHUB_WORKSPACE"/artifacts/desktop-base_*.deb)
+          if (( ${#DEB_FILES[@]} != 1 )); then
+            printf 'Expected one desktop-base .deb file; found %s.\n' "${#DEB_FILES[@]}" >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/autopkgtest"
+          autopkgtest --output-dir="$RUNNER_TEMP/autopkgtest" \
+            --setup-commands='apt-get update' \
+            "${DEB_FILES[0]}" . -- docker --sudo --pull debian:trixie
+
+      - name: Test install, upgrade, removal, and purge
+        run: |
+          shopt -s nullglob
+          DEB_FILES=("$GITHUB_WORKSPACE"/artifacts/desktop-base_*.deb)
+          if (( ${#DEB_FILES[@]} != 1 )); then
+            printf 'Expected one desktop-base .deb file; found %s.\n' "${#DEB_FILES[@]}" >&2
+            exit 1
+          fi
+          sudo docker run --rm \
+            --volume "${DEB_FILES[0]}:/tmp/desktop-base-built.deb:ro" \
+            --volume "$GITHUB_WORKSPACE/.github/scripts/test-package-lifecycle.sh:/tmp/test-package-lifecycle.sh:ro" \
+            debian:trixie \
+            bash /tmp/test-package-lifecycle.sh /tmp/desktop-base-built.deb \
+            2>&1 | tee "$RUNNER_TEMP/package-lifecycle.log"
+
+      - name: Collect logs and reports
+        if: always()
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/artifacts/test-logs"
+
+          if [ -d "$RUNNER_TEMP/autopkgtest" ]; then
+            cp -R "$RUNNER_TEMP/autopkgtest" "$GITHUB_WORKSPACE/artifacts/test-logs/"
+          fi
+          find "$RUNNER_TEMP" -maxdepth 4 -type f \( -name '*.log' -o -name '*.log.gz' -o -name 'testinfo.json' \) \
+            -exec cp -f {} "$GITHUB_WORKSPACE/artifacts/test-logs/" \; 2>/dev/null || true
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-base-build
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 7
