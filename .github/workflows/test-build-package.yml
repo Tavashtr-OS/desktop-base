@@ -67,6 +67,7 @@ jobs:
 
       - name: Build package in Debian Trixie
         run: |
+          mkdir -p "$GITHUB_WORKSPACE/artifacts"
           PATCH_BRANCH="$(git branch --show-current)"
           echo "Building applied patch queue: $PATCH_BRANCH"
 
@@ -74,25 +75,10 @@ jobs:
           gbp buildpackage \
             --git-debian-branch="$PATCH_BRANCH" \
             --git-no-pristine-tar \
-            --git-builder="sbuild --chroot-mode=unshare --chroot=$HOME/.cache/sbuild/trixie-amd64.tar.xz --dist=trixie --arch-all --no-run-lintian --no-clean-source"
-
-      - name: Collect build artifacts
-        if: always()
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/artifacts"
-
-          find "$(dirname "$GITHUB_WORKSPACE")" \
-            -maxdepth 4 \
-            -type f \
-            \( \
-              -name '*.deb' -o \
-              -name '*.changes' -o \
-              -name '*.buildinfo' -o \
-              -name '*.dsc' \
-            \) \
-            -not -path '*/.git/*' \
-            -not -path "$GITHUB_WORKSPACE/artifacts/*" \
-            -exec cp -f {} "$GITHUB_WORKSPACE/artifacts/" \;
+            --git-builder="sbuild --chroot-mode=unshare \
+            --chroot=$HOME/.cache/sbuild/trixie-amd64.tar.xz \
+            --build-dir=$GITHUB_WORKSPACE/artifacts --arch-all \
+            --no-run-lintian --no-clean-source"
 
       - name: Run Lintian
         run: |
@@ -102,7 +88,12 @@ jobs:
             printf 'Expected one desktop-base .changes file; found %s.\n' "${#CHANGES_FILES[@]}" >&2
             exit 1
           fi
-          lintian --fail-on error --display-info "${CHANGES_FILES[0]}" 2>&1 | tee "$RUNNER_TEMP/lintian-report.log"
+          lintian \
+            --include-dir "$GITHUB_WORKSPACE/.github/lintian" \
+            --profile tavashtr/main \
+            --fail-on error \
+            --display-info \
+            "${CHANGES_FILES[0]}" 2>&1 | tee "$RUNNER_TEMP/lintian-report.log"
 
       - name: Start Docker service
         run: |
