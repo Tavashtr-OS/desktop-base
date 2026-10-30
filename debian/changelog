@@ -11,7 +11,7 @@ desktop-base (12.0.6+nmu1~deb12u1+tavashtr2) tavashtr; urgency=medium
   * Add synchronization test marker patch.
   * Add more commit
 
- -- Himanshu <himanshu@himanshu-IdeaPad-Slim-3-15AHP10>  Sat, 10 Oct 2026 19:29:23 +0530
+ -- Himanshu <himanshukumargupta@tavashtr.com>  Sat, 10 Oct 2026 19:29:23 +0530
 
 desktop-base (12.0.6+nmu1~deb12u1) bookworm; urgency=medium
 
