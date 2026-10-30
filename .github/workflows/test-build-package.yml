@@ -82,6 +82,7 @@ jobs:
 
       - name: Run Lintian
         run: |
+          set -o pipefail
           shopt -s nullglob
           CHANGES_FILES=("$GITHUB_WORKSPACE"/artifacts/desktop-base_*.changes)
           if (( ${#CHANGES_FILES[@]} != 1 )); then
@@ -138,6 +139,16 @@ jobs:
           fi
           find "$RUNNER_TEMP" -maxdepth 4 -type f \( -name '*.log' -o -name '*.log.gz' -o -name 'testinfo.json' \) \
             -exec cp -f {} "$GITHUB_WORKSPACE/artifacts/test-logs/" \; 2>/dev/null || true
+
+      - name: Sanitize artifact filenames
+        if: always()
+        run: |
+          while IFS= read -r -d '' file; do
+            sanitized=${file//:/-}
+            if [[ "$sanitized" != "$file" ]]; then
+              mv -- "$file" "$sanitized"
+            fi
+          done < <(find "$GITHUB_WORKSPACE/artifacts" -type f -print0)
 
       - name: Upload build artifacts
         if: always()
