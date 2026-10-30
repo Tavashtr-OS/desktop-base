@@ -16,6 +16,7 @@ if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
             desktop-background \
             /usr/share/desktop-base/$theme-theme/wallpaper/contents/images/$filename
     done << EOF
+ceratopsian 1920x1080.svg
 emerald 1920x1080.svg
 homeworld 1920x1080.svg
 futureprototype 1920x1080.svg
@@ -59,6 +60,7 @@ EOF
             desktop-background.xml \
             /usr/share/desktop-base/$theme-theme/wallpaper/gnome-background.xml
     done << EOF
+ceratopsian
 emerald
 homeworld
 futureprototype
@@ -81,6 +83,7 @@ EOF
             desktop-lockscreen.xml \
             /usr/share/desktop-base/$theme-theme/lockscreen/gnome-background.xml
     done << EOF
+ceratopsian
 emerald
 homeworld
 futureprototype
@@ -102,6 +105,7 @@ EOF
             desktop-plasma5-wallpaper \
             /usr/share/desktop-base/$theme-theme/wallpaper
     done << EOF
+ceratopsian
 emerald
 homeworld
 futureprototype
@@ -125,6 +129,7 @@ EOF
             desktop-login-background \
             /usr/share/desktop-base/$theme-theme/login/$background
     done << EOF
+ceratopsian background.svg
 emerald background.svg
 homeworld background.svg
 futureprototype background.svg
@@ -146,6 +151,8 @@ EOF
             desktop-grub \
             /usr/share/desktop-base/$theme-theme/grub/grub-$ratio.png
     done << EOF
+ceratopsian 4x3
+ceratopsian 16x9
 emerald 4x3
 emerald 16x9
 homeworld 4x3
@@ -189,6 +196,7 @@ EOF
             desktop-theme \
             /usr/share/desktop-base/$theme-theme
     done << EOF
+ceratopsian
 emerald
 futureprototype
 moonlight
