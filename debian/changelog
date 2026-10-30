@@ -1,10 +1,19 @@
-desktop-base (12.0.6+nmu1~deb12u1+tavashtr3) UNRELEASED; urgency=medium
+desktop-base (13.0.4+tavashtr1) tavashtr; urgency=medium
 
+  [ Tavashtr ]
   * Added additional workflow for automation
   * Added script for resolving Debian changelog
   * GitHub automation now also uses GitHub App Token
 
- -- Himanshu Kumar Gupta <himanshukumargupta@tavashtr.com>  Tue, 20 Oct 2026 09:40:41 +0530
+  [ Debian ]
+  [ Aurélien COUDERC ]
+  * Fix ceratopsian-theme’s plymouth password/fsck prompts off-center on
+    multi-monitor mixed-resolution set-ups. Thanks Shaun Lewis for the patch.
+    (Closes: #1110858)
+
+
+ -- Himanshu Kumar Gupta <himanshukumargupta@tavashtr.com>  Fri, 30 Oct 2026 03:24:02 +0000
+
 
 desktop-base (12.0.6+nmu1~deb12u1+tavashtr2) tavashtr; urgency=medium
 
